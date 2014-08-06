@@ -10,7 +10,6 @@ c.loginitialgini,
 c.growthingini,
 c.span,
 c.loginitialgdppercapita,
-
 c.growthgdppercapita, 
 a.privcreavg, 
 c.logprivatecredit, 
