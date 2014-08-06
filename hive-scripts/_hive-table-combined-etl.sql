@@ -3,9 +3,9 @@
 # fms.FullName=b/d/.name
 # fms.TIN=a/b/c/d/.taxpayerid
 # fms.TotalCount=c.timeperiod
-# fms.Amount=c.loginitialgini - edited values in source
-# fms.AgencyLocationCode=c.loginitialgdppercapita - edited values in source
-# fms.RoutingNumber=c.inflation - edited values in source
+# fms.Amount=c.loginitialgini - edited values in source X
+# fms.AgencyLocationCode=c.loginitialgdppercapita - edited values in source X
+# fms.RoutingNumber=c.inflation - edited values in source X
 # fms.CountryCode=a.countrycode
 # Others are just labels to match fms fields
 #
