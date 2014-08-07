@@ -1,26 +1,27 @@
+/* General Flow */
 ETL
 query
 sentry
 search
 navigator
 
+/* Users */
 EDH/HUE users:
 cloudera
 susie_auditor
 frankie_inspector
-
-mysql user:
-cdhsqooper:cdhsqooper
+mysql cdhsqooper:cdhsqooper
 
 /* Set Up */
-  * Review all scripts for source paths and ip addresses and modify as needed!
+  * Review all scripts for source paths and ip addresses and modify as needed
   
-/* Set up mysql instance with data - script does all */
+/* Set up mysql instance with data - script contains all required statements
+   You will need to modify your source data paths */
   * have a mysql database installed.
   * create database
   * create cdhsqooper user
   * loads csv data
-  * driver is already installed on cluster vm
+  * ensure driver is already installed on cluster vm
   * need driver for where you install kettle - see kettle install notes
   * also creates the final destination exported table after transformation job run in edh
 
@@ -29,7 +30,8 @@ cdhsqooper:cdhsqooper
     * $KETTLE_HOME/plugins/pentaho-big-data-plugin/plugin.properties change active hadoop to $KETTLE_HOME/plugins/pentaho-big-data-plugin/hadoop-configurations/cdh50
     * $KETTLE_HOME/lib/ add your mysql jar
     
-/* load all data csv (load all tables anyway) into hdfs, assumes files local to cluster box */
+/* upload all data csv (load all tables anyway) into hdfs, assumes files local to cluster
+   box e.g. already scp from host to guest vm */
   * $ hadoop fs -ls
     $ hadoop fs -mkdir finance_data_edh
   * Copy csv to hdfs, assumes data is on hdfs box
@@ -61,7 +63,7 @@ frankie_inspector
   --target-dir / --connect jdbc:mysql://localhost:3306/finance_data_edh?defaultFetchSize=500&useCursorFetch=true --username cdhsqooper --password cdhsqooper --table tbl_poverty
 3 files are now loaded as tables
 
-/* Do some queries in HIVE beeline GUI client - do no show impala yet? */
+/* Do some queries in HIVE beeline GUI client - do not show impala yet? */
 
 /* ETL Using Kettle */
   * create job
@@ -74,8 +76,11 @@ frankie_inspector
     * use General->Start as first step in palette
     * use Big Data->Sqoop Import as second step
     * namenode ip 172.16.71.155, 8020
+    * jobtracker ip 172.16.71.155, 8032
+    * target dir: /user/cloudera
     * use command line view option for sqoop command
     --connect jdbc:mysql://172.16.71.1:3306/finance_data_edh?defaultFetchSize=500&useCursorFetch=true --username cdhsqooper --password cdhsqooper --table tbl_poverty --hive-import --hive-database finance_data_edh -m 1
+    --connect jdbc:mysql://172.16.71.1:3306/finance_data_edh?defaultFetchSize=500&useCursorFetch=true --username cdhsqooper --password cdhsqooper --table tbl_poverty --num-mappers 1
     TODO SQOOP import as part of transform job to sqoop in poverty table from Mysql
     * use Scripting->SQL as third step
     * Create outbound link.

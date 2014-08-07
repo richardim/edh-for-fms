@@ -81,7 +81,7 @@ Create table IF NOT EXISTS finance_data_edh.tbl_6005
 # Ensure your path to file is correct local to the mysql instance
 #
 use finance_data_edh;
-LOAD DATA LOCAL INFILE '/Users/rim/_cdh-demoss/demo-for-treasury/data/6005.csv'
+LOAD DATA LOCAL INFILE '/Users/rim/_cdh-demos/demo-for-treasury/data/6005.csv'
 INTO TABLE finance_data_edh.tbl_6005
 FIELDS TERMINATED BY ','
     ENCLOSED BY '"'
@@ -179,32 +179,32 @@ IGNORE 1 LINES;
 use finance_data_edh;
 Create table IF NOT EXISTS finance_data_edh.combined_export_table
 (
- name VARCHAR(128), 
- taxpayerid VARCHAR(12), 
- countrycode VARCHAR(5), 
- country VARCHAR(128), 
- year int, 
- timeperiod int, 
- loginitialgini double, 
- growthingini double, 
- span int, 
- loginitialgdppercapita double, 
- growthgdppercapita double, 
- privcreavg float, 
- logprivatecredit double, 
- inflation double, 
- logtrade double, 
- gr_ltrade float, 
- gr_school float, 
- logschooling double, 
- logcommercialcentralbank float, 
- loginitiallowestincomeshare double, 
- growthinlowestincomeshare float, 
- logagedependency float, 
- loginitialheadcount float, 
- loginitialpovertygap float, 
- growthinheadcount float, 
- growthinpovertygap float, 
- growthinmeanincome float, 
- populationgrowth float
+ FullName VARCHAR(128),
+ TIN VARCHAR(12),
+ year int,
+ TotalCount int, 
+ Amount double,
+ AgencyLocationCode double,
+ RoutingNumber double,
+ CountryCode VARCHAR(5), 
+ Country VARCHAR(128),
+ CheckSerialNumber double,
+ FederalProgramAgencyIdentifier int,
+ SwiftReportingDetail double, 
+ ACH_Reporting float, 
+ ACH_TraceNumber double,
+ ACH_OriginalTraceNumber double, 
+ EIN float, 
+ ControlNumber float, 
+ PhoneNumber double, 
+ PaymentDetailTypeCode float, 
+ CheckStubLine double, 
+ CheckMemoLine float, 
+ WirePayment float, 
+ WireDetail float, 
+ FedWireTypeCode float, 
+ BankName float, 
+ BeneficiaryIdentifier float, 
+ PaymentRemark float, 
+ BeneficiaryBankRemarks float
 );
