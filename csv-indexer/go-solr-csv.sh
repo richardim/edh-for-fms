@@ -2,14 +2,16 @@
 # sample code not supported
 # source from  example by Mark Brooks
 # adapted to be fully scripted
-# long instead of int for faceted salary search
+# 
+# Theoretically only need to modify the mr command to put your source data folder
+#
 
 # Some staging folder on the QSVM
 export PROJECT_HOME=/home/cloudera/csv-solr
 # export SOLR_HOME=/opt/cloudera/parcels/CDH/lib/solr
 
 # Collection name for SOLR
-COLLECTION=INDEXED-CSV-DATA
+COLLECTION=INDEXED-HIVE-DATA
 
 # Clean UP
 if [ "$1" == "clean" ]; then
@@ -50,7 +52,7 @@ hadoop fs -mkdir -p  /user/cloudera/tmp/solroutdir
 # hadoop jar /opt/cloudera/parcels/CDH/lib/solr/contrib/mr/search-mr-*-job.jar org.apache.solr.hadoop.MapReduceIndexerTool -D 'mapred.child.java.opts=-Xmx500m' --log4j $PROJECT_HOME/log4j.properties --morphline-file $PROJECT_HOME/solr-csv.conf --output-dir hdfs://localhost:8020/user/cloudera/tmp/solroutdir --verbose --go-live --zk-host localhost:2181/solr --collection $COLLECTION --dry-run hdfs://localhost:8020/user/cloudera/sample_07
 
 # Without Dry-run
-hadoop jar /opt/cloudera/parcels/CDH/lib/solr/contrib/mr/search-mr-*-job.jar org.apache.solr.hadoop.MapReduceIndexerTool -D 'mapred.child.java.opts=-Xmx500m' --log4j $PROJECT_HOME/log4j.properties --morphline-file $PROJECT_HOME/solr-csv.conf --output-dir hdfs://localhost:8020/user/cloudera/tmp/solroutdir --verbose --go-live --zk-host localhost:2181/solr --collection $COLLECTION hdfs://localhost:8020/user/cloudera/sample_07
+hadoop jar /opt/cloudera/parcels/CDH/lib/solr/contrib/mr/search-mr-*-job.jar org.apache.solr.hadoop.MapReduceIndexerTool -D 'mapred.child.java.opts=-Xmx500m' --log4j $PROJECT_HOME/log4j.properties --morphline-file $PROJECT_HOME/solr-csv.conf --output-dir hdfs://localhost:8020/user/cloudera/tmp/solroutdir --verbose --go-live --zk-host localhost:2181/solr --collection $COLLECTION hdfs://localhost:8020/user/hive/warehouse/finance_data_edh.db/combined_etl_table
 
 echo "Finished!"
 echo SEARCH TIPS: 
