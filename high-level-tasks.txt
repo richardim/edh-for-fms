@@ -14,3 +14,9 @@ views
 navigator
 
 sentry
+
+8/28
+fix view column names
+fix sqoop export
+
+optional - revisit etl to sqoop and combine

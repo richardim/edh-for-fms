@@ -29,15 +29,29 @@ mysql cdhsqooper:cdhsqooper
   * config for cdh50 in plugin.properties
     * $KETTLE_HOME/plugins/pentaho-big-data-plugin/plugin.properties change active hadoop to $KETTLE_HOME/plugins/pentaho-big-data-plugin/hadoop-configurations/cdh50
     * $KETTLE_HOME/lib/ add your mysql jar
-    
+    * $KETTLE_HOME/plugins/pentaho-big-data-plugin/hadoop-configurations/cdh50/mapred-site.xml
+      <name>mapreduce.jobhistory.address</name>
+      <value>172.16.71.155:10020</value>
+    * $KETTLE_HOME/plugins/pentaho-big-data-plugin/hadoop-configurations/cdh50/yarn-site.xml
+      <property>
+        <name>yarn.resourcemanager.hostname</name>
+        <value>172.16.71.155</value>
+      </property>
+      
 /* upload all data csv (load all tables anyway) into hdfs, assumes files local to cluster
    box e.g. already scp from host to guest vm */
+  * scp <my path>/data.tar cloudera@172.16.71.155:~/datasets/finance_data_edh
+  * tar -xvf ~/datasets/finance_data_edh/data.tar
   * $ hadoop fs -ls
     $ hadoop fs -mkdir finance_data_edh
   * Copy csv to hdfs, assumes data is on hdfs box
     $ hadoop fs -copyFromLocal /home/cloudera/datasets/finance_data_edh/*.csv /user/cloudera/finance_data_edh
     $ hadoop fs -ls /user/cloudera/finance_data_edh  
 
+/* upload csv-indexer files to make the index of the combined table and morphline
+  * scp <my path>/csv-indexer.tar cloudera@172.16.71.155:~/
+  * tar -xvf ~/csv-indexer.tar
+  
 /* Create users */
 users:
 cloudera
@@ -103,7 +117,13 @@ frankie_inspector
    step of the edh offload */
   * sqoop the data to mysql - fyi - hiveql defaults to delimiting fields by ^A character which is '\001'
   sqoop export --connect jdbc:mysql://172.16.71.1:3306/finance_data_edh --username cdhsqooper --password cdhsqooper --table combined_export_table --export-dir /user/hive/warehouse/finance_data_edh.db/combined_etl_table -m 1 --input-fields-terminated-by '\001' --input-null-string '\\N' --input-null-non-string '\\N'
+
+/* Index new table
+  * ./go-solr-csv.sh
+  * go to dashboard and create one to demo
   
+  
+
 /* run scripts to set up sentry permissions */
 setup sentry and permissions on newly created de-normalized table
   - if VM is not set up, refer to sentry set up for hive and impala in CM 5.1 docs
