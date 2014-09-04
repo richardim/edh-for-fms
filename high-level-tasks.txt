@@ -17,6 +17,6 @@ sentry
 
 8/28
 fix view column names
-fix sqoop export
-
-optional - revisit etl to sqoop and combine
+9/4
+sentry to impala
+run through post set up

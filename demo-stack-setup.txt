@@ -9,12 +9,26 @@ navigator
 EDH/HUE users:
 cloudera
 susie_auditor
-frankie_inspector
+frank_inspector
 mysql cdhsqooper:cdhsqooper
 
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 /* Set Up */
-  * Review all scripts for source paths and ip addresses and modify as needed
-  
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Review all scripts for source paths and ip addresses and modify as needed
+
+/* Create users */
+default user, drives most of demo, prebuilt with Quickstart VM
+cloudera
+
+Add susie_auditor and creates default group with same name
+$ sudo useradd susie_auditor
+
+Add frank_inspector and creates default group with same name
+$ sudo useradd frank_inspector
+
+Create users in HUE via UI admin section.
+
 /* Set up mysql instance with data - script contains all required statements
    You will need to modify your source data paths */
   * have a mysql database installed.
@@ -38,7 +52,67 @@ mysql cdhsqooper:cdhsqooper
         <value>172.16.71.155</value>
       </property>
       
-/* upload all data csv (load all tables anyway) into hdfs, assumes files local to cluster
+/* Sentry Setup */
+Setup sentry early. If VM is not set up, refer to sentry set up for hive and impala in CM 5.1 docs. Simply add the service using CM and click through
+
+Hive Service set to use Sentry
+  Service-wide->Sentry Service->Sentry
+  
+Disable impersonation for hiveserver2
+  HiveServer2->Enable Impersonation->hive.server2.enable.impersonation, hive.server2.enable.doAs set to false
+  
+Hive bypass metastore to false
+  Service-Wide->Advanced->Bypass Hive Metastore Server->false
+
+Safety valve required in hive
+  Service-Wide->Advanced
+  <property>
+    <name>hive.sentry.testing.mode</name>
+    <value>true</value>
+  </property>
+
+YARN Service
+  NodeManager Base Group->Security->min.user.id = 0
+
+Impala Service set to use Sentry
+  Service-wide->Sentry Service->Sentry
+  
+Restart cluster
+
+Connect using beeline.  Here are the connect strings.  If you deviate from this at all, for instance dont include the driver param, you will log in however, it will not let you run grants/create roles.
+  $ beeline -u jdbc:hive2://localhost:10000 -n hive -d org.apache.hive.jdbc.HiveDriver
+  or
+  $ beeline
+  > !connect jdbc:hive2://localhost:10000 hive org.apache.hive.jdbc.HiveDriver
+
+KISS by creating a role that would have all grants to the default cloudera user (this user is default on the quickstart vm)
+  > create role db_admin_role;
+  > grant all on server server1 to role db_admin_role;
+  > grant role db_admin_role to group hive; // maybe not necessary?
+  > grant role db_admin_role to group cloudera;
+
+Add cloudera to hive group so he can write to /warehouse directory
+  $ sudo usermod -a -G hive cloudera
+
+Create roles and give privileges.  These commands are based on examples required for a demo, you can modify for your environment
+  $ beeline -u jdbc:hive2://localhost:10000 -n hive -d org.apache.hive.jdbc.HiveDriver
+
+  > create role vw_auditor_role;
+  > grant select on table vw_auditor to role vw_auditor_role;
+  > grant role vw_auditor_role to group susie_auditor;
+
+  > create role vw_inspector_role;
+  > grant select on table vw_inspector to role vw_inspector_role;
+  > grant role vw_inspector_role to group frank_inspector;
+
+Modify permissions in hdfs
+  $ sudo -u hdfs hdfs dfs -mkdir /user/hive/stage
+  $ sudo -u hdfs hdfs dfs -chmod -R 771 /user/hive/stage
+  $ sudo -u hdfs hdfs dfs -chown -R hive:hive /user/hive/stage
+  $ sudo -u hdfs hdfs dfs -chmod -R 771 /user/hive/warehouse
+  $ sudo -u hdfs hdfs dfs -chown -R hive:hive /user/hive/warehouse
+    
+/* upload all data csv (load all tables anyway) into hdfs, assumes files local to cluster 
    box e.g. already scp from host to guest vm */
   * scp <my path>/data.tar cloudera@172.16.71.155:~/datasets/finance_data_edh
   * tar -xvf ~/datasets/finance_data_edh/data.tar
@@ -51,14 +125,11 @@ mysql cdhsqooper:cdhsqooper
 /* upload csv-indexer files to make the index of the combined table and morphline
   * scp <my path>/csv-indexer.tar cloudera@172.16.71.155:~/
   * tar -xvf ~/csv-indexer.tar
-  
-/* Create users */
-users:
-cloudera
-susie_auditor
-frankie_inspector
-    
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 /* Demo */
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 /* Quick introduction to HUE and load first datasets as tables */
   * Create database finance_data_edh using "Data Browsers->Metastore Tables"
   * Show creating hive tables and loading data from hdfs (6005, 8005) via HUE
@@ -69,12 +140,12 @@ frankie_inspector
 2 files are now loaded as tables
 
 /* SQOOP data in from a database - mysql was preferred */
-  * sqoop tbl_panel into edh
+  * sqoop tbl_poverty into edh
   #sqoop import --connect jdbc:mysql://172.16.71.1:3306/finance_data_edh --username cdhsqooper --password cdhsqooper --table tbl_6005 --hive-import --hive-database finance_data_edh -m 1
   #sqoop import --connect jdbc:mysql://172.16.71.1:3306/finance_data_edh --username cdhsqooper --password cdhsqooper --table tbl_8005 --hive-import --hive-database finance_data_edh -m 1
-  sqoop import --connect jdbc:mysql://172.16.71.1:3306/finance_data_edh --username cdhsqooper --password cdhsqooper --table tbl_panel --hive-import --hive-database finance_data_edh -m 1
-  #sqoop import --connect jdbc:mysql://172.16.71.1:3306/finance_data_edh --username cdhsqooper --password cdhsqooper --table tbl_poverty --hive-import --hive-database finance_data_edh -m 1
-  --target-dir / --connect jdbc:mysql://localhost:3306/finance_data_edh?defaultFetchSize=500&useCursorFetch=true --username cdhsqooper --password cdhsqooper --table tbl_poverty
+  #sqoop import --connect jdbc:mysql://172.16.71.1:3306/finance_data_edh --username cdhsqooper --password cdhsqooper --table tbl_panel --hive-import --hive-database finance_data_edh -m 1
+  sqoop import --connect jdbc:mysql://172.16.71.1:3306/finance_data_edh --username cdhsqooper --password cdhsqooper --table tbl_poverty --hive-import --hive-database finance_data_edh -m 1
+  
 3 files are now loaded as tables
 
 /* Do some queries in HIVE beeline GUI client - do not show impala yet? */
@@ -122,43 +193,30 @@ frankie_inspector
   * ./go-solr-csv.sh
   * go to dashboard and create one to demo
   
+/* Navigator Demo
+
+  
+  
+  
+  
+  
   
 
-/* run scripts to set up sentry permissions */
-setup sentry and permissions on newly created de-normalized table
-  - if VM is not set up, refer to sentry set up for hive and impala in CM 5.1 docs
-    - leave impersonation for hiveserver2
-  - safety valve required in hive
-  <property>
-<name>sentry.hive.testing.mode</name>
-<value>true</value>
-</property>
-  - NodeManager Base Group / Security for YARN service to 0
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-*nifty notes*
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+/* Notes */
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 - issues with dropping tables or databases using hive metabrowser UI.  You can drop the
 full table from the query browser instead: drop database name cascade;
 
 -use finance_data_edh;
 -select name,taxpayerid,countrycode,country,year,loginitialgini,growthingini,span,logprivatecredit,inflation,logtrade,logschooling,logcommercialcentralbank,loginitiallowestincomeshare,growthinlowestincomeshare from tbl8005csv;
 
-Note
   * Using raw hive sql will load the data file with header as row, so dont do it unless your
   data is ok to have the header mingled in.
   * do not use 6005 as table name.  use tbl_6005.  Theres a parsing issue with hive query
   where you must use `6005` in your query syntax.
   * Navigator Metadata Server consuming tons of cpu cycle - can stop for prep work since it is just wasting electricity and burning your laptop hot
+* beeline connect to do sentry updates
+  * !connect jdbc:hive2://localhost:10000 cloudera cloudera org.apache.hive.jdbc.HiveDriver
+  * !connect jdbc:hive2://localhost:10000 hive org.apache.hive.jdbc.HiveDriver
+  * beeline -u jdbc:hive2://localhost:10000 -n hive -d org.apache.hive.jdbc.HiveDriver
