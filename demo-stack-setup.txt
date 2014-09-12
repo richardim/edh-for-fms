@@ -1,58 +1,85 @@
-/* General Flow */
+/*************************************************************************************
+ High Level Flow
+*************************************************************************************/
 ETL
 query
 sentry
 search
 navigator
 
-/* Users */
-EDH/HUE users:
+/*************************************************************************************
+ Users
+*************************************************************************************/
+EDH/HUE/Navigator user:
 cloudera
+
+HUE Sentry restricted users:
 susie_auditor
 frank_inspector
-mysql cdhsqooper:cdhsqooper
 
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-/* Set Up */
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+mysql user: cdhsqooper:cdhsqooper
+
+/*************************************************************************************
+ Set Up
+*************************************************************************************/
 Review all scripts for source paths and ip addresses and modify as needed
 
-/* Create users */
+/*************************************************************************************
+ Create users
+*************************************************************************************/
 default user, drives most of demo, prebuilt with Quickstart VM
-cloudera
+  $ cloudera
 
 Add susie_auditor and creates default group with same name
-$ sudo useradd susie_auditor
+  $ sudo useradd susie_auditor
 
 Add frank_inspector and creates default group with same name
-$ sudo useradd frank_inspector
+  $ sudo useradd frank_inspector
 
 Create users in HUE via UI admin section.
 
-/* Set up mysql instance with data - script contains all required statements
-   You will need to modify your source data paths */
+/*************************************************************************************
+ Set up source Database MySQL
+*************************************************************************************/
+Set up mysql instance with data - sql script contains all required statements to create
+users and tables sourced from raw csv files.
+  ! You will need to modify your source csv data paths !
   * have a mysql database installed.
   * create database
   * create cdhsqooper user
   * loads csv data
   * ensure driver is already installed on cluster vm
   * need driver for where you install kettle - see kettle install notes
-  * also creates the final destination exported table after transformation job run in edh
+  * also create the final destination export table after transformation job run in edh
 
-/* install pentaho kettle */
-  * config for cdh50 in plugin.properties
-    * $KETTLE_HOME/plugins/pentaho-big-data-plugin/plugin.properties change active hadoop to $KETTLE_HOME/plugins/pentaho-big-data-plugin/hadoop-configurations/cdh50
-    * $KETTLE_HOME/lib/ add your mysql jar
-    * $KETTLE_HOME/plugins/pentaho-big-data-plugin/hadoop-configurations/cdh50/mapred-site.xml
+/*************************************************************************************
+ Pentaho Kettle
+*************************************************************************************/
+Download and install (extract).  Default folder is data-integration.
+  
+Configure for cdh50 in plugin.properties
+  $KETTLE_HOME/plugins/pentaho-big-data-plugin/plugin.properties
+Change active hadoop to
+  $KETTLE_HOME/plugins/pentaho-big-data-plugin/hadoop-configurations/cdh50
+  
+Add your mysql driver jar to
+  $KETTLE_HOME/lib/
+
+Configure Job History server - use correct IP of your VM
+  $KETTLE_HOME/plugins/pentaho-big-data-plugin/hadoop-configurations/cdh50/mapred-site.xml
       <name>mapreduce.jobhistory.address</name>
       <value>172.16.71.155:10020</value>
-    * $KETTLE_HOME/plugins/pentaho-big-data-plugin/hadoop-configurations/cdh50/yarn-site.xml
+
+Configure YARN RM host - use your correct IP of your VM  
+  $KETTLE_HOME/plugins/pentaho-big-data-plugin/hadoop-configurations/cdh50/yarn-site.xml
       <property>
         <name>yarn.resourcemanager.hostname</name>
         <value>172.16.71.155</value>
       </property>
       
-/* Sentry Setup */
+/*************************************************************************************
+ Sentry Setup
+*************************************************************************************/
 Setup sentry early. If VM is not set up, refer to sentry set up for hive and impala in CM 5.1 docs. Simply add the service using CM and click through
 
 Hive Service set to use Sentry
