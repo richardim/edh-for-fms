@@ -1,10 +1,12 @@
 /*************************************************************************************
  High Level Flow
 *************************************************************************************/
+
+load
 ETL
 query
-sentry
 search
+sentry
 navigator
 
 /*************************************************************************************
@@ -76,7 +78,38 @@ Configure YARN RM host - use your correct IP of your VM
         <name>yarn.resourcemanager.hostname</name>
         <value>172.16.71.155</value>
       </property>
-      
+
+create job
+    * create database connection->New select Hadoop Hive 2 and enter properties:  
+      172.16.71.155, finance_data_edh, 10000, uname and pw needed
+    * right click on connection in view panel and 'share' the connection
+    * create the job in the design panel
+    * create database connection->New select MySQL and enter properties:
+      localhost, finance_data_edh, 3306, cdhsqooper:cdhsqooper
+    * use General->Start as first step in palette
+    * use Big Data->Sqoop Import as second step
+    * namenode ip 172.16.71.155, 8020
+    * jobtracker ip 172.16.71.155, 8032
+    * target dir: /user/cloudera
+    * use command line view option for sqoop command
+    --connect jdbc:mysql://172.16.71.1:3306/finance_data_edh?defaultFetchSize=500&useCursorFetch=true --username cdhsqooper --password cdhsqooper --table tbl_poverty --hive-import --hive-database finance_data_edh -m 1
+    --connect jdbc:mysql://172.16.71.1:3306/finance_data_edh?defaultFetchSize=500&useCursorFetch=true --username cdhsqooper --password cdhsqooper --table tbl_poverty --num-mappers 1
+    TODO SQOOP import as part of transform job to sqoop in poverty table from Mysql
+    * use Scripting->SQL as third step
+    * Create outbound link.
+    * edit SQL step: give name, use connection you made steps above, enter sql statement to run (c&p from file)
+    * click OK and then Save the job.
+    
+/*************************************************************************************
+ Preload database information in HUE
+*************************************************************************************/
+  * Create database finance_data_edh using "Data Browsers->Metastore Tables"
+    * Create 1 table using poverty.csv
+  * Create the vw_* before hand.  This may require a non-sentry dry-run to create
+  the views.  This allows you to set grants and roles in sentry setup before the execution
+  of the real demo, then you can you just drive without having to grant your permissions
+  again...
+ 
 /*************************************************************************************
  Sentry Setup
 *************************************************************************************/
@@ -132,14 +165,24 @@ Create roles and give privileges.  These commands are based on examples required
   > grant select on table vw_inspector to role vw_inspector_role;
   > grant role vw_inspector_role to group frank_inspector;
 
-Modify permissions in hdfs
+Modify permissions in hdfs - affects sentry and sqoop job/upload and import data
   $ sudo -u hdfs hdfs dfs -mkdir /user/hive/stage
   $ sudo -u hdfs hdfs dfs -chmod -R 771 /user/hive/stage
   $ sudo -u hdfs hdfs dfs -chown -R hive:hive /user/hive/stage
   $ sudo -u hdfs hdfs dfs -chmod -R 771 /user/hive/warehouse
   $ sudo -u hdfs hdfs dfs -chown -R hive:hive /user/hive/warehouse
-    
-/* upload all data csv (load all tables anyway) into hdfs, assumes files local to cluster 
+
+/*************************************************************************************
+ Search Indexer Scripts
+*************************************************************************************/
+/* upload csv-indexer files to make the index of the combined table and morphline
+  * scp <my path>/csv-indexer.tar cloudera@172.16.71.155:~/
+  * tar -xvf ~/csv-indexer.tar
+  
+/*************************************************************************************
+ Data staging
+*************************************************************************************/
+/* upload data csv (load all tables anyway) into hdfs, assumes files local to cluster 
    box e.g. already scp from host to guest vm */
   * scp <my path>/data.tar cloudera@172.16.71.155:~/datasets/finance_data_edh
   * tar -xvf ~/datasets/finance_data_edh/data.tar
@@ -149,78 +192,73 @@ Modify permissions in hdfs
     $ hadoop fs -copyFromLocal /home/cloudera/datasets/finance_data_edh/*.csv /user/cloudera/finance_data_edh
     $ hadoop fs -ls /user/cloudera/finance_data_edh  
 
-/* upload csv-indexer files to make the index of the combined table and morphline
-  * scp <my path>/csv-indexer.tar cloudera@172.16.71.155:~/
-  * tar -xvf ~/csv-indexer.tar
-
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-/* Demo */
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+/*************************************************************************************
+ Demo
+*************************************************************************************/
+/* Prelaunch */
+Launch VM
+Launch MySQLWorkbench to show existing external RDBMS data
+Launch Excel with one of the CSV, recommend 8005.csv
+Launch Pentaho Spoon
 
 /* Quick introduction to HUE and load first datasets as tables */
-  * Create database finance_data_edh using "Data Browsers->Metastore Tables"
+
   * Show creating hive tables and loading data from hdfs (6005, 8005) via HUE
     * Data Browsers->Metastore Tables pick the finance_data_edh database.
-    * Create a new table from a file (already on HDFS) 6005 data- do 1.
-    * Create a new table from a file, upload to HDFS after viewing in excel locally 8005 data - do 1.
+    * Create a new table from a file (already on HDFS) 6005 data.
+    * Create a new table from a file, upload to HDFS after viewing in excel locally 8005 data.
 
-2 files are now loaded as tables
+3 files are now loaded as tables
 
 /* SQOOP data in from a database - mysql was preferred */
   * sqoop tbl_poverty into edh
   #sqoop import --connect jdbc:mysql://172.16.71.1:3306/finance_data_edh --username cdhsqooper --password cdhsqooper --table tbl_6005 --hive-import --hive-database finance_data_edh -m 1
   #sqoop import --connect jdbc:mysql://172.16.71.1:3306/finance_data_edh --username cdhsqooper --password cdhsqooper --table tbl_8005 --hive-import --hive-database finance_data_edh -m 1
-  #sqoop import --connect jdbc:mysql://172.16.71.1:3306/finance_data_edh --username cdhsqooper --password cdhsqooper --table tbl_panel --hive-import --hive-database finance_data_edh -m 1
-  sqoop import --connect jdbc:mysql://172.16.71.1:3306/finance_data_edh --username cdhsqooper --password cdhsqooper --table tbl_poverty --hive-import --hive-database finance_data_edh -m 1
+  sqoop import --connect jdbc:mysql://172.16.71.1:3306/finance_data_edh --username cdhsqooper --password cdhsqooper --table tbl_panel --hive-import --hive-database finance_data_edh -m 1
+  #sqoop import --connect jdbc:mysql://172.16.71.1:3306/finance_data_edh --username cdhsqooper --password cdhsqooper --table tbl_poverty --hive-import --hive-database finance_data_edh -m 1
   
-3 files are now loaded as tables
+4 files are now loaded as tables
 
-/* Do some queries in HIVE beeline GUI client - do not show impala yet? */
+/* Run Impala Queries */
 
 /* ETL Using Kettle */
-  * create job
-    * create database connection->New select Hadoop Hive 2 and enter properties:  
-      172.16.71.155, finance_data_edh, 10000, uname and pw needed
-    * right click on connection in view panel and 'share' the connection
-    * create the job in the design panel
-    * create database connection->New select MySQL and enter properties:
-      localhost, finance_data_edh, 3306, cdhsqooper:cdhsqooper
-    * use General->Start as first step in palette
-    * use Big Data->Sqoop Import as second step
-    * namenode ip 172.16.71.155, 8020
-    * jobtracker ip 172.16.71.155, 8032
-    * target dir: /user/cloudera
-    * use command line view option for sqoop command
-    --connect jdbc:mysql://172.16.71.1:3306/finance_data_edh?defaultFetchSize=500&useCursorFetch=true --username cdhsqooper --password cdhsqooper --table tbl_poverty --hive-import --hive-database finance_data_edh -m 1
-    --connect jdbc:mysql://172.16.71.1:3306/finance_data_edh?defaultFetchSize=500&useCursorFetch=true --username cdhsqooper --password cdhsqooper --table tbl_poverty --num-mappers 1
-    TODO SQOOP import as part of transform job to sqoop in poverty table from Mysql
-    * use Scripting->SQL as third step
-    * Create outbound link.
-    * edit SQL step: give name, use connection you made steps above, enter sql statement to run (c&p from file)
-    * click OK and then Save the job.
-    * run job
+  * describe kettle palette, various job configurations available, etc.
+  * Execute job
+  * Explain during execution leverage parallelism of cluster to create new EL Transform
 
 4 tables/files and combined_etl_table should be now fully loaded
 
+/* Run Impala Queries */
 /* Run few queries against combined_etl_table, ensure having run invalidate metadata command in impala before execution */
   * Run select *
   * Run select * where =
   * Run select <certain columns> where =
   * Each one should take time to run and subsequently show the job tracking to explain the relationship to mapreduce
   * Show same queries in Impala.  Select * no where wont have much diff, but others dramatically do
-  
-/* Run HQL scripts to create views */
 
+/* Run Impala Queries to highlight RBAC and Sentry
+  * Login as susie_auditor
+  * Run queries on vw_*
+  * Run select * from finance_data_edh.combined_etl_table and highlight error
+  * Login as frank_inspector
+  * Run queries on vw_*
+  * Highlight how each view has different columns, all sourced from combined_etl_table
+  * Log into CM and go to Audits
+  * susie_auditor illegal access attempt should be logged in Red.
+  
 /* Export newly transformed combined table to the existing mysql database to show the last
    step of the edh offload */
   * sqoop the data to mysql - fyi - hiveql defaults to delimiting fields by ^A character which is '\001'
   sqoop export --connect jdbc:mysql://172.16.71.1:3306/finance_data_edh --username cdhsqooper --password cdhsqooper --table combined_export_table --export-dir /user/hive/warehouse/finance_data_edh.db/combined_etl_table -m 1 --input-fields-terminated-by '\001' --input-null-string '\\N' --input-null-non-string '\\N'
 
-/* Index new table
+/* Index new table - Optional: dry run demo before hand and have dashboard already created
+to avoid indexing live after table creation.  Continue to just demoing
   * ./go-solr-csv.sh
   * go to dashboard and create one to demo
   
 /* Navigator Demo
+  * Show lineage and extraction
+  * Apply additional metadata as needed
 
   
   

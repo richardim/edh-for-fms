@@ -1,0 +1,2 @@
+/* Import from MySQL */
+sqoop import --connect jdbc:mysql://172.16.71.1:3306/finance_data_edh --username cdhsqooper --password cdhsqooper --table tbl_panel --hive-import --hive-database finance_data_edh -m 1

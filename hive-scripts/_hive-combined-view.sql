@@ -1,3 +1,4 @@
+/* vw_auditor */
 CREATE view finance_data_edh.vw_auditor AS
 SELECT
 Fullname,
