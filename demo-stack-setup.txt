@@ -157,6 +157,8 @@ Add cloudera to hive group so he can write to /warehouse directory
 Create roles and give privileges.  These commands are based on examples required for a demo, you can modify for your environment
   $ beeline -u jdbc:hive2://localhost:10000 -n hive -d org.apache.hive.jdbc.HiveDriver
 
+  > use finance_data_edh;
+  
   > create role vw_auditor_role;
   > grant select on table vw_auditor to role vw_auditor_role;
   > grant role vw_auditor_role to group susie_auditor;
@@ -220,6 +222,9 @@ Launch Pentaho Spoon
 4 files are now loaded as tables
 
 /* Run Impala Queries */
+select * from tbl_8005;
+
+select a.year, a.taxpayerid, b.name, b.countrycode, b.loginitialgini from tbl_6005 a, tbl_8005 b where a.taxpayerid = b.taxpayerid;
 
 /* ETL Using Kettle */
   * describe kettle palette, various job configurations available, etc.
@@ -229,6 +234,10 @@ Launch Pentaho Spoon
 4 tables/files and combined_etl_table should be now fully loaded
 
 /* Run Impala Queries */
+select * from combined_etl_table;
+
+select * from combined_etl_table where agencylocationcode > 80000 order by year;
+
 /* Run few queries against combined_etl_table, ensure having run invalidate metadata command in impala before execution */
   * Run select *
   * Run select * where =

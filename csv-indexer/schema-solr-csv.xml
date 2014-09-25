@@ -74,6 +74,7 @@
      <field name="routingnumber" type="double" indexed="true" stored="true"/>
      <field name="countrycode" type="string" indexed="true" stored="true"/>
      <field name="country" type="string" indexed="true" stored="true"/>
+     <field name="text" type="text_general" indexed="true" stored="false" multiValued="true"/>
      <field name="_version_" type="long" indexed="true" stored="true"/>
   </fields>
 
@@ -83,6 +84,11 @@
   <copyField source="description" dest="text"/>
   <copyField source="salary" dest="text"/>
   <copyField source="total_emp" dest="text"/> -->
+  <copyField source="fullname" dest="text"/>
+  <copyField source="amount" dest="text"/>
+  <copyField source="country" dest="text"/>
+  <copyField source="countrycode" dest="text"/>
+  <copyField source="tin" dest="text"/>
 
   <types>
     <!-- field type definitions. The "name" attribute is

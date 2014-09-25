@@ -1,2 +1,38 @@
+navigator settings
+http://172.16.71.155:7187/debug/config
+nav.extractor.hive.max_wait 300
+nav.extractor.poll_period 180
+
 /* Import from MySQL */
 sqoop import --connect jdbc:mysql://172.16.71.1:3306/finance_data_edh --username cdhsqooper --password cdhsqooper --table tbl_panel --hive-import --hive-database finance_data_edh -m 1
+
+/* After all table created */
+select * from tbl_8005;
+
+#select a.year, a.taxpayerid, b.name, b.countrycode, b.loginitialgini from tbl_6005 a, tbl_8005 b where a.taxpayerid = b.taxpayerid;
+
+/* After ELT */
+select * from combined_etl_table;
+
+select * from combined_etl_table where agencylocationcode > 80000 order by year;
+
+/* Sentry View for Susie_Auditor
+select * from vw_auditor where fullname !="" order by fullname, tin, year;
+
+/* Sentry View for Frank_Inspector
+select * from vw_inspector;
+
+select * from combined_etl_table;
+
+/* Audits
+Command Filter = QUERY
+
+/* Metadata
+sensitivitylevel:cui
+dataintransitobligationcode:encryption
+
+/* Metadata Search Query
+up_dataintransitobligationcode:encryption
+
+/* Export to MySQL */
+sqoop export --connect jdbc:mysql://172.16.71.1:3306/finance_data_edh --username cdhsqooper --password cdhsqooper --table combined_export_table --export-dir /user/hive/warehouse/finance_data_edh.db/combined_etl_table -m 1 --input-fields-terminated-by '\001' --input-null-string '\\N' --input-null-non-string '\\N'
