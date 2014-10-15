@@ -27,6 +27,9 @@ select * from combined_etl_table;
 /* Audits
 Command Filter = QUERY
 
+/* Metadata Search Query
+up_dataintransitobligationcode:encryption
+
 /* Metadata
 sensitivitylevel:cui
 dataintransitobligationcode:encryption
